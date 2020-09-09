@@ -1,0 +1,24 @@
+{
+  "name": "jsonpath-lifter",
+  "version": "0.0.1",
+  "description": "JSONPath based document transformations.",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test",
+    "tdd": "tap -w test"
+  },
+  "keywords": [
+    "JSONPath",
+    "transform",
+    "JSON"
+  ],
+  "author": "Andy Armstrong <andy@hexten.net>",
+  "license": "ISC",
+  "dependencies": {
+    "jsonpath-faster": "^0.0.7",
+    "lodash": "^4.17.20"
+  },
+  "devDependencies": {
+    "tap": "^14.10.8"
+  }
+}
