@@ -1,11 +1,15 @@
 {
   "name": "jsonpath-lifter",
   "version": "0.0.1",
-  "description": "JSONPath based document transformations.",
+  "description": "JSONPath based document transformations",
   "main": "index.js",
   "scripts": {
     "test": "npm test",
     "tdd": "tap -w test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndyA/jsonpath-lifter.git"
   },
   "keywords": [
     "JSONPath",
@@ -14,8 +18,12 @@
   ],
   "author": "Andy Armstrong <andy@hexten.net>",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AndyA/jsonpath-lifter/issues"
+  },
+  "homepage": "https://github.com/AndyA/jsonpath-lifter#readme",
   "dependencies": {
-    "jsonpath-faster": "^0.0.7",
+    "jsonpath-lifter": "^0.0.7",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
