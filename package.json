@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/AndyA/jsonpath-lifter#readme",
   "dependencies": {
-    "jsonpath-lifter": "^0.0.7",
+    "jsonpath-faster": "^0.0.7",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
