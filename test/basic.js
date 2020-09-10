@@ -38,4 +38,10 @@ tap.test("Negative", async () => {
   );
 
   tap.throws(() => lifter({ set: "Foo" })({}), /no dst/i, "throws if no dst");
+
+  tap.throws(
+    () => lifter({ foo: 1, bar: 2 }),
+    /unknown/i,
+    "unknown properties"
+  );
 });
