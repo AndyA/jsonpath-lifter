@@ -1,5 +1,41 @@
 "use strict";
 
 const tap = require("tap");
+const lifter = require("..");
 
-tap.pass("OK!");
+tap.test("Simple lifter", async () => {
+  const lift = lifter([{ dst: "$.id", src: "$.ident" }]);
+  const doc = { ident: "ABC", id: "DEF" };
+  const got1 = lift(doc);
+  tap.same(got1, { id: "ABC" }, "simple lift");
+  tap.same(doc, { ident: "ABC", id: "DEF" }, "doc unchanged");
+});
+
+tap.test("Set value", async () => {
+  const lift = lifter(
+    { set: "Hello", dst: "$.greeting" },
+    { set: doc => doc.seq + 1, dst: "$.seq" }
+  );
+
+  const doc = { seq: 19, id: "ABC" };
+  const got = lift(doc);
+  const want = { greeting: "Hello", seq: 20 };
+  tap.same(got, want, "set via constant, function");
+});
+
+tap.test("More complex lifter", async () => {
+  const lift = lifter(
+    { dst: "$.id", src: "$.ident" },
+    { dst: "$.meta.seq", src: "$.seq", via: v => v + 1 }
+  );
+});
+
+tap.test("Negative", async () => {
+  tap.throws(
+    () => lifter({ set: "Foo", src: "$.id" })({}),
+    /src and set/i,
+    "throws if src with set"
+  );
+
+  tap.throws(() => lifter({ set: "Foo" })({}), /no dst/i, "throws if no dst");
+});
