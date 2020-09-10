@@ -51,6 +51,16 @@ const tests = [
         ]
       },
       {
+        name: "multivalue, multi-paths",
+        recipe: [
+          {
+            dst: "$.emails",
+            mv: true,
+            src: ["$.author.email", "$.reviewers[*].email"]
+          }
+        ]
+      },
+      {
         name: "multivalue, descendant path",
         recipe: [{ dst: "$.emails", mv: true, src: "$..email" }]
       },
@@ -77,9 +87,7 @@ const tests = [
     ]
   },
   {
-    doc: {
-      meta: { email: { host: "hexten.net", user: "andy" } }
-    },
+    doc: { meta: { email: { host: "hexten.net", user: "andy" } } },
     cases: [
       {
         name: "no clone - doc trampled",

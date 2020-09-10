@@ -30,10 +30,7 @@ const want = {
 tap.test(`Precompiled lifter`, async () => {
   const liftident = lifter(
     { src: "$", dst: "$" },
-    {
-      dst: "$.id",
-      set: doc => `${doc.name} <${doc.email}>`
-    }
+    { dst: "$.id", set: doc => `${doc.name} <${doc.email}>` }
   );
 
   const lift = lifter({
