@@ -44,4 +44,8 @@ tap.test("Negative", async () => {
     /unknown/i,
     "unknown properties"
   );
+
+  tap.throws(() => lifter({}), /missing/i, "missing src/set");
+
+  tap.throws(() => lifter({ src: "$", via: 3 }), /function/i, "bad via");
 });
