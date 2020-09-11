@@ -247,6 +247,10 @@ const lift = lifter(
 
 Set `leaf` to force the `src` JSONPath to match only leaf nodes - i.e. not nodes containing an object or an array.
 
+## Performance
+
+Behind the scenes `jsonpath-lifter` uses [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents an hour.
+
 ## License
 
 [MIT](LICENSE)
