@@ -12,7 +12,7 @@ const allDeep = async obj => {
 
   // Find any promises
   while (stack.length) {
-    const [owner, key] = stack.shift();
+    const [owner, key] = stack.pop();
     const obj = owner[key];
 
     if (isPromise(obj)) {
