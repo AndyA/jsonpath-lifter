@@ -64,13 +64,13 @@ const got = lift(doc);
 This is a simple example. Read on to discover more complex rules and the interesting ways in which they can be composed.
 ## API
 
-To create a new `lift` function call `lifter` which a list of rules. Any nested arrays in he input arguments will be flattened.
+To create a new `lift` function call `lifter` which a list of rules. Any nested arrays in the input arguments will be flattened.
 
 ```javascript
 const lift = lifter({ dst: "$.id", src: "$.serial" });
 ```
 
-If any of the (flattened) arguments is a function it will be called with the same signature as the lift function itself. This allows existing lifters to be composed together.
+If any of the (flattened) arguments is a function it will be called with the same signature as the lift function itself when the lift function is used. This allows existing lifters to be composed together.
 
 ```javascript
 const liftMeta = lifter({ ... });
@@ -112,7 +112,7 @@ Lift the supplied `doc` and return a promise that resolves when all of the promi
 
 ## Rules
 
-A rule is an object that may contain the following properties.
+A lifter is a set of rules that are applied one after another to an input document to produce an output document. A rule is an object that may contain the following properties.
 
 Property | Meaning 
 ---------|--------
@@ -198,6 +198,21 @@ The signature of the `via` function is the same as that of `lifter` function. Th
 ```javascript
 const liftMeta = lifter( { ... } );
 const lift = lifter( { src: "$.meta", dst: "$.metadata", via: liftMeta } );
+```
+
+You may specify `via` as an array of rules which is a shorthand for supplying a nested lifter.
+
+```javascript
+const lift = lifter({
+  src: "$.info",
+  dst: "$.meta", 
+  via: [
+    { src: "$.name", dst: "$.moniker" },
+    { src: "$.modified", 
+      dst: "$.updated", 
+      via: mod => new Date(mod).toISOString() }
+  ]
+});
 ```
 
 ### mv
