@@ -30,6 +30,22 @@ tap.test("More complex lifter", async () => {
   );
 });
 
+tap.test("Side effect only", async () => {
+  const ids = [];
+  const lift = lifter({ dst: false, src: "$.id", via: id => ids.push(id) });
+  const doc = { id: "ABC" };
+  const got = lift(doc);
+  tap.same(got, undefined, "no value");
+  tap.same(ids, ["ABC"], "side effect");
+});
+
+tap.test("NOP", async () => {
+  const lift = lifter({ dst: false, src: "$.id" });
+  const doc = { id: "ABC" };
+  const got = lift(doc);
+  tap.same(got, undefined, "no value");
+});
+
 tap.test("Negative", async () => {
   tap.throws(
     () => lifter({ set: "Foo", src: "$.id" })({}),
