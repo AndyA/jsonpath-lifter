@@ -65,5 +65,4 @@ const got = lift(doc);
 
 ## License
 
-[ISC](LICENSE)
-
+[MIT](LICENSE)
