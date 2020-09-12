@@ -91,7 +91,7 @@ Argument | Meaning
 ---------|--------
 `doc`    | The document to transform
 `outDoc` | The output document to write to; automatically created if none passed
-`$`      | A general purpose context variable which is passed to `via` and `dst` callbacks
+`$`      | A general purpose [context variable](#context) which is passed to `via` and `dst` callbacks
 
 The return value is the output document - either `outDoc` or a newly created object if `outDoc` is `undefined`.
 
@@ -113,7 +113,7 @@ Accepts the same arguments as `lifter`.
 
 Lift the supplied `doc` and return a promise that resolves when all of the promises in `outDoc` have resolved. Accepts the same arguments as the `lift` function itself. This allows async `via` functions.
 
-Returns a Promise that is resolved when all of the promises found in the document have resolved (including any copied from the input document). Rejects of any of them rejects.
+Returns a Promise that is resolved when all of the promises found in the document have resolved (including any copied from the input document). Rejects if any of them rejects.
 
 ## Rules
 
@@ -129,11 +129,11 @@ Property | Meaning
 `clone`  | True to clone values copied from the source document
 `leaf`   | `src` will only match leaf nodes
 
-Let's take a look at them in more detail.
+The `src` and `set` properties control the execution of the rule and one or other of them is required. The other properties are optional. Let's take a look at them in more detail.
 
 ### src
 
-Specify the JSONPath in the input document where this rule will match. It can be any valid JSONPath. If it matches at multiple points in the source document this rule will be executed once for each match. The `src` and `set` directives control the execution of the rule. If `src` has no matches the rule will be skipped. If `src` is an array each of the paths in it will be tried in turn. The rule will execute for all matches.
+Specify the JSONPath in the input document where this rule will match. It can be any valid JSONPath. If it matches at multiple points in the source document this rule will be executed once for each match. If `src` has no matches the rule will be skipped. If `src` is an array each of the paths in it will be tried in turn. The rule will execute for all matches.
 
 Here's a rule that normalises an ID that may be found in `_id`, `ident` or `_uuid`. 
 
@@ -159,7 +159,7 @@ lift.add(
 );
 ```
 
-To compute the value dynamically `set` should be a function. It is called with two arguments: the input document and the `$` context. Alternately `set` can be a literal value.
+To compute the value dynamically `set` should be a function. It is called with two arguments: the input document and the `$` context. 
 
 ```javascript
 lift.add(
@@ -167,9 +167,17 @@ lift.add(
 );
 ```    
 
+Alternately `set` can be a literal value.
+
+```javascript
+lift.add(
+  { set: true, dst: "$.touched" }
+);
+```    
+
 Set requires `dst` to be set and to be a literal JSONPath.
 
-Every rule must contain either a `src` or `set` property. 
+Every rule must contain either a `src` or a `set` property. 
 
 ### dst
 
@@ -182,9 +190,9 @@ Value           | Meaning
 JSONPath string | The location in the output document for this value
 A function      | Called with (`value`, `path`, `$`) - should return the JSONPath to use
 `false`         | Disable writing to output document. Assumes `via` has side effects that we need
-Missing         | Use the path in the input document where this value was found.
+`undefined`     | Use the path in the input document where this value was found.
 
-When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If you supply a function as `dst` it can supply an output path based on the input path, the matched value and the context (`$`). Each match can be placed in a different location in the output document.
+When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If you supply a function as `dst` it can supply an output path based on the input path, the matched value and the context (`$`). Each match can this be placed in a different location in the output document.
 
 If `dst` is missing altogether the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
@@ -279,11 +287,11 @@ const lift = lifter(
 );
 ```
 
-Any JSONPath that starts with `@` rather than `$` refers to a local variable which persists for only a single invocation of the lifer. Nested lifters inherit local variables but any changes that they make are not propagated back to the calling lifter.
+Any JSONPath that starts with `@` rather than `$` refers to a local variable which persists for only a single invocation of the lifter. Nested lifters inherit local variables but any changes that they make are not propagated back to the calling lifter.
 
 ## Performance
 
-Behind the scenes `jsonpath-lifter` uses [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents an hour.
+Behind the scenes `jsonpath-lifter` uses [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents per hour.
 
 ## License
 
