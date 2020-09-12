@@ -2,7 +2,7 @@
 
 Transform JSON objects using JSONPath expressions
 
-## Document Transformations
+## Declarative Rule Based Document Transformations
 
 Suppose you have documents like this:
 
@@ -99,13 +99,13 @@ Argument | Meaning
 ---------|--------
 `inDoc`  | The document to transform
 `outDoc` | The output document to write to; automatically created if none passed
-`$`      | A general purpose [context variable](#context) which is passed to `via` and `dst` callbacks
+`$`      | A general purpose [context variable](#context) which is passed to `via`, `dst` and `set` callbacks and may be referenced in JSONPath expressions.
 
 The return value is the output document - either `outDoc` (modified) or a newly created object if `outDoc` is `undefined`.
 
 ## Methods
 
-The generated `lift` function also has a couple of methods.
+The generated `lift` function also has these methods.
 
 ### lift.add(...rules)
 
@@ -136,7 +136,7 @@ A lifter is a set of rules that are applied one after another to an input docume
 
 Property | Meaning 
 ---------|--------
-`src`    | The source JSONPath to extract data from. May match multiple fields. May be an array of JSONPaths
+`src`    | The source JSONPath to extract data from. May match multiple locations. May be an array of JSONPaths
 `set`    | Used instead of `src` to provide a constant or computed value
 `dst`    | JSONPath to write values to in the output document
 `via`    | A function to cook the value with. May be another lifter or an array of rules (which will be compiled into a lifter)
@@ -144,7 +144,7 @@ Property | Meaning
 `clone`  | True to clone values copied from the source document
 `leaf`   | `src` will only match leaf nodes
 
-The `src` and `set` properties control the execution of the rule and one or other of them is required. The other properties are optional. Let's take a look at them in more detail.
+The `src` and `set` properties control the execution of each rule and one or other of them is required. The other properties are optional. Let's take a look at them in more detail.
 
 ### src
 
@@ -172,7 +172,7 @@ lift.add(
 );
 ```
 
-To compute the value dynamically `set` should be a function. It is called with two arguments: the input document and the `$` context. 
+To compute the value dynamically `set` should be a function. It is called as `set(inDoc, $)`. 
 
 ```javascript
 lift.add(
@@ -205,11 +205,11 @@ A function        | Called as `dst(value, path, $)`, returns the JSONPath to use
 `false`           | Disable writing to output document. Assumes `via` has side effects that we need
 `undefined`       | Use the path in the input document where this value was found.
 
-When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. 
+When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document overwriting any previous matches. 
 
 If `dst` is a function it must return an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
 
-If `dst` is missing altogether the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
+If `dst` is missing altogether (`undefined`) the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
 ```javascript
 const liftIDs = lifter({ src: "$..id" });
@@ -225,7 +225,7 @@ const liftIDs = lifter({ src: "$..id", via: id => id.toLowerCase() });
 
 The `via` function is called as `via(value, path, $)` and should return the value to be assigned to the output document. 
 
-The signature of the `via` function is the same as that of `lifter` function. That means that lifters can be reused and composed easily.
+The signature of the `via` function is the same as that of a `lift` function. That means that lifters can be reused and composed easily.
 
 ```javascript
 const liftMeta = lifter( { ... } );
@@ -306,7 +306,7 @@ Any JSONPath that starts with `@` rather than `$` refers to a local variable whi
 
 ## Performance
 
-The `lift` function is created using [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents per hour.
+The `lift` function is created using [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. `dst` paths are compiled and cached the first time each one is seen. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents per hour.
 
 ## License
 
