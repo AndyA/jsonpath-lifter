@@ -29,6 +29,7 @@ const liftFeature = lifter(
 const lift = lifter(
   {
     src: "$.features[*]",
+    // Dangerous!
     dst: v => `$.events[${JSON.stringify(v.id)}]`,
     via: liftFeature
   },
