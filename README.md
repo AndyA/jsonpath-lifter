@@ -39,7 +39,7 @@ const want = {
 
 All the links are collected in one place and the `name` and `email` properties of `reporter` have been merged as `ident`.
 
-With `jsonpath-lifter` you can easily make a function to perform the transformation.
+With `jsonpath-lifter` you can make a function to perform the transformation.
 
 ```javascript
 const lifter = require("jsonpath-lifter");
@@ -61,11 +61,11 @@ const lift = lifter(
 const got = lift(doc);
 ```
 
-This is a simple example. Read on to discover more complex rules and the interesting ways in which they can be combined.
+Read on to discover more complex rules and the interesting ways in which they can be combined.
 
 ## API
 
-To create a new `lift` function call `lifter` with a list of rules. 
+To create a new `lift` function call `lifter` with a list of [rules](#rules). 
 
 ```javascript
 const lift = lifter(
@@ -78,7 +78,7 @@ const lift = lifter(
 );
 ```
 
-The return value `lift` is a function that will apply the rules in order on an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature. 
+`lifter` returns a function that will apply the rules in order on an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature. 
 
 Any nested arrays in the input arguments will be flattened.
 
@@ -91,21 +91,21 @@ const lift = lifter(
 );
 ```
 
-`lifter` returns a function which accepts up to three arguments. We call this function `lift` in much of the following documentation.
+The returned function accepts up to three arguments. We call this function `lift` in much of the following documentation.
 
-### lift(doc[, outDoc[, $]])
+### lift(inDoc[, outDoc[, $]])
 
 Argument | Meaning
 ---------|--------
-`doc`    | The document to transform
+`inDoc`  | The document to transform
 `outDoc` | The output document to write to; automatically created if none passed
 `$`      | A general purpose [context variable](#context) which is passed to `via` and `dst` callbacks
 
-The return value is the output document - either `outDoc` or a newly created object if `outDoc` is `undefined`.
+The return value is the output document - either `outDoc` (modified) or a newly created object if `outDoc` is `undefined`.
 
 ## Methods
 
-The `lift` function also has a couple of methods.
+The generated `lift` function also has a couple of methods.
 
 ### lift.add(...rules)
 
@@ -117,9 +117,9 @@ lift.add({ set: () => new Date().toISOString(), dst: "$.modified"});
 
 Accepts the same arguments as `lifter`.
 
-### async lift.promise(doc[, outDoc[, $]])
+### async lift.promise(inDoc[, outDoc[, $]])
 
-Lift the supplied `doc` and return a promise that resolves when all of the promises in `outDoc` have resolved. Accepts the same arguments as the `lift` function itself. This allows async `via` functions.
+Lift the supplied `inDoc` and return a promise that resolves when all of the promises in `outDoc` have resolved. Accepts the same arguments as the `lift` function itself. This allows async `via` functions.
 
 ```javascript
 const lift = lifter(
@@ -132,7 +132,7 @@ Returns a Promise that is resolved when all of the promises found in the documen
 
 ## Rules
 
-A lifter is a set of rules that are applied one after another to an input document to produce an output document. Each rule is an object that may contain the following properties.
+A lifter is a set of rules that are applied one after another to an input document to produce an output document. Each rule is either a function with the signature `f(inDoc, outDoc, $)` or an object that may contain the following properties.
 
 Property | Meaning 
 ---------|--------
@@ -166,9 +166,9 @@ Use `set` to add a value to the output document without having to match anything
 ```javascript
 lift.add(
   // Add modified stamp
-  { set: () => new Date().toISOString(), dst: "$.modified"},
+  { dst: "$.modified", set: () => new Date().toISOString() },
   // Say we were here
-  { set: "FooMaching", dst: "$.processedBy" }
+  { dst: "$.processedBy", set: "FooMachine" }
 );
 ```
 
@@ -176,7 +176,7 @@ To compute the value dynamically `set` should be a function. It is called with t
 
 ```javascript
 lift.add(
-  { set: (doc, $) => `${doc.id}-${$.rev}`, dst: "$.stamp" }
+  { dst: "$.stamp", set: (doc, $) => `${doc.id}-${$.rev}` }
 );
 ```    
 
@@ -184,7 +184,7 @@ Alternately `set` can be a literal value.
 
 ```javascript
 lift.add(
-  { set: true, dst: "$.touched" }
+  { dst: "$.touched", set: true }
 );
 ```    
 
@@ -201,11 +201,13 @@ When used with `src`, `dst` can take the following values
 Value             | Meaning
 ------------------|----------
 A JSONPath string | The location in the output document for this value
-A function        | Called with (`value`, `path`, `$`), returns the JSONPath to use
+A function        | Called as `dst(value, path, $)`, returns the JSONPath to use
 `false`           | Disable writing to output document. Assumes `via` has side effects that we need
 `undefined`       | Use the path in the input document where this value was found.
 
-When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If `dst` is a function it must return an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
+When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. 
+
+If `dst` is a function it must return an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
 
 If `dst` is missing altogether the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
@@ -221,7 +223,7 @@ Values found in the input document may be modified before assigning them to the 
 const liftIDs = lifter({ src: "$..id", via: id => id.toLowerCase() });
 ```
 
-The `via` function is called with (`value`, `path`, `$`) and should return the value to be assigned to the output document. 
+The `via` function is called as `via(value, path, $)` and should return the value to be assigned to the output document. 
 
 The signature of the `via` function is the same as that of `lifter` function. That means that lifters can be reused and composed easily.
 
@@ -279,7 +281,7 @@ Set `leaf` to force the `src` JSONPath to match only leaf nodes - i.e. not nodes
 
 ## Context
 
-The context variable `$` is used internally by `jsonpath-lifter` and may be augmented with your own properties. Internally it's used to hold references to the input and output documents and any [local variables](#local-variables).
+The context variable `$` is used internally by `jsonpath-lifter` and is passed to all callbacks. It may be augmented with your own properties. Internally it's used to hold references to the input and output documents and any [local variables](#local-variables).
 
 Property | Meaning
 ---------|--------
@@ -304,7 +306,7 @@ Any JSONPath that starts with `@` rather than `$` refers to a local variable whi
 
 ## Performance
 
-Behind the scenes `jsonpath-lifter` uses [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents per hour.
+The `lift` function is created using [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents per hour.
 
 ## License
 
