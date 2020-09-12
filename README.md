@@ -61,16 +61,24 @@ const lift = lifter(
 const got = lift(doc);
 ```
 
-This is a simple example. Read on to discover more complex rules and the interesting ways in which they can be composed.
+This is a simple example. Read on to discover more complex rules and the interesting ways in which they can be combined.
+
 ## API
 
 To create a new `lift` function call `lifter` with a list of rules. 
 
 ```javascript
-const lift = lifter({ dst: "$.id", src: "$.serial" });
+const lift = lifter(
+  { dst: "$.id", src: "$.serial" },
+  { dst: "$.updated", 
+    src: "$.meta.updated", 
+    via: u => new Date(u).toISOString() },
+  { dst: "$.author",
+    src: "$.meta.author.email" }
+);
 ```
 
-The return value `lift` is a function that will perform the rules in order on an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature. 
+The return value `lift` is a function that will apply the rules in order on an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature. 
 
 Any nested arrays in the input arguments will be flattened.
 
@@ -79,11 +87,11 @@ const liftMeta = lifter({ ... });
 const liftTimes = lifter({ ... });
 const lift = lifter(
   { dst: "$.id", src: "$._id" },
-  [ liftMeta, liftTimes ]
+  [ liftMeta, liftTimes ] // flattened
 );
 ```
 
-Returns a function which accepts up to three arguments. We call this function `lift` in much of the following documentation.
+`lifter` returns a function which accepts up to three arguments. We call this function `lift` in much of the following documentation.
 
 ### lift(doc[, outDoc[, $]])
 
@@ -97,7 +105,7 @@ The return value is the output document - either `outDoc` or a newly created obj
 
 ## Methods
 
-The `lift` function has a couple of methods.
+The `lift` function also has a couple of methods.
 
 ### lift.add(...rules)
 
@@ -113,11 +121,18 @@ Accepts the same arguments as `lifter`.
 
 Lift the supplied `doc` and return a promise that resolves when all of the promises in `outDoc` have resolved. Accepts the same arguments as the `lift` function itself. This allows async `via` functions.
 
+```javascript
+const lift = lifter(
+  { dst: "$.status", src: "$.url", via: async u => fetchStatus(u) }
+);
+const cooked = await lift.promise(doc);
+```
+
 Returns a Promise that is resolved when all of the promises found in the document have resolved (including any copied from the input document). Rejects if any of them rejects.
 
 ## Rules
 
-A lifter is a set of rules that are applied one after another to an input document to produce an output document. A rule is an object that may contain the following properties.
+A lifter is a set of rules that are applied one after another to an input document to produce an output document. Each rule is an object that may contain the following properties.
 
 Property | Meaning 
 ---------|--------
@@ -133,7 +148,7 @@ The `src` and `set` properties control the execution of the rule and one or othe
 
 ### src
 
-Specify the JSONPath in the input document where this rule will match. It can be any valid JSONPath. If it matches at multiple points in the source document this rule will be executed once for each match. If `src` has no matches the rule will be skipped. If `src` is an array each of the paths in it will be tried in turn. The rule will execute for all matches.
+Specify the JSONPath in the input document where this rule will match. It can be any valid JSONPath. If it matches at multiple locations in the source document the rule will be executed once for each match. If `src` has no matches the rule will not be executed. If `src` is an array each of the paths in it will be tried in turn and the rule will execute for all matches.
 
 Here's a rule that normalises an ID that may be found in `_id`, `ident` or `_uuid`. 
 
@@ -142,9 +157,7 @@ Here's a rule that normalises an ID that may be found in `_id`, `ident` or `_uui
 const idNorm = lifter({ src: ["$._id", "$.ident", "$._uuid"], dst: "$.ID" });
 ```
 
-If all three properties are present the rule will execute three times and `$.ID` will ultimately be set to the value of `$._uuid`.
-
-When there are multiple matches the effect depends on the settings of `dst` and `mv`. By default the last matching value will overwrite any previous values but see [mv](#mv) and [dst](#dst) for ways of gathering multiple values with a single rule.
+If more than one of `_id`, `ident` and `_uuid` are present in the input document the rule will execute for each match and ultimately `$.ID` will be set to the value of the last match. See [mv](#mv) and [dst](#dst) for ways of gathering multiple values with a single rule.
 
 ### set
 
@@ -185,14 +198,14 @@ Specify the path in the output document where the matched value should be stored
 
 When used with `src`, `dst` can take the following values
 
-Value           | Meaning
-----------------|----------
-JSONPath string | The location in the output document for this value
-A function      | Called with (`value`, `path`, `$`), returns the JSONPath to use
-`false`         | Disable writing to output document. Assumes `via` has side effects that we need
-`undefined`     | Use the path in the input document where this value was found.
+Value             | Meaning
+------------------|----------
+A JSONPath string | The location in the output document for this value
+A function        | Called with (`value`, `path`, `$`), returns the JSONPath to use
+`false`           | Disable writing to output document. Assumes `via` has side effects that we need
+`undefined`       | Use the path in the input document where this value was found.
 
-When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If you supply a function as `dst` it can supply an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
+When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If `dst` is a function it must return an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
 
 If `dst` is missing altogether the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
