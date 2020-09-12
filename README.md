@@ -148,7 +148,7 @@ When there are multiple matches the effect depends on the settings of `dst` and 
 
 ### set
 
-To add a value to the output document without having to match anything use `set`.
+Use `set` to add a value to the output document without having to match anything.
 
 ```javascript
 lift.add(
@@ -175,24 +175,24 @@ lift.add(
 );
 ```    
 
-Set requires `dst` to be set and to be a literal JSONPath.
+Set requires `dst` to be supplied and to be a literal JSONPath.
 
 Every rule must contain either a `src` or a `set` property. 
 
 ### dst
 
-Specify the path in the output document where the matched value should be stored. For `set` `dst` is required and must be a JSONPath.
+Specify the path in the output document where the matched value should be stored. For `set`, `dst` is required and must be a JSONPath.
 
-For `src` `dst` can take the following values
+When used with `src`, `dst` can take the following values
 
 Value           | Meaning
 ----------------|----------
 JSONPath string | The location in the output document for this value
-A function      | Called with (`value`, `path`, `$`) - should return the JSONPath to use
+A function      | Called with (`value`, `path`, `$`), returns the JSONPath to use
 `false`         | Disable writing to output document. Assumes `via` has side effects that we need
 `undefined`     | Use the path in the input document where this value was found.
 
-When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If you supply a function as `dst` it can supply an output path based on the input path, the matched value and the context (`$`). Each match can this be placed in a different location in the output document.
+When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document and only the last match will remain. If you supply a function as `dst` it can supply an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
 
 If `dst` is missing altogether the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
@@ -234,7 +234,7 @@ const lift = lifter({
 
 ### mv
 
-Normally a single value is assigned to each location in the output document. However if 'mv' is set to 'true' the corresponding `dst` (however computed) is treated as an array into which each matching value is pushed.
+Normally a single value is assigned to each location in the output document. However if `mv` is set to `true` the corresponding `dst` (however computed) is treated as an array onto which each matching value is pushed.
 
 ```javascript
 const collectLinks = lifter({
