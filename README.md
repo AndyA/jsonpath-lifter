@@ -64,32 +64,26 @@ const got = lift(doc);
 This is a simple example. Read on to discover more complex rules and the interesting ways in which they can be composed.
 ## API
 
-To create a new `lift` function call `lifter` which a list of rules. 
+To create a new `lift` function call `lifter` with a list of rules. 
 
 ```javascript
 const lift = lifter({ dst: "$.id", src: "$.serial" });
 ```
 
+The return value `lift` is a function that will perform the rules in order on an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature. 
+
 Any nested arrays in the input arguments will be flattened.
-
-```javascript
-// this is the same as the last example
-const lift = lifter([{ dst: "$.id", src: "$.serial" }]);
-```
-
-If any of the (flattened) arguments is a function it will be called with the same signature as the lift function itself when the lift function is used. This allows existing lifters to be composed together.
 
 ```javascript
 const liftMeta = lifter({ ... });
 const liftTimes = lifter({ ... });
 const lift = lifter(
   { dst: "$.id", src: "$._id" },
-  liftMeta,
-  liftTimes
+  [ liftMeta, liftTimes ]
 );
 ```
 
-The returned `lift` is a function which accepts up to three arguments.
+Returns a function which accepts up to three arguments. We call this function `lift` in much of the following documentation.
 
 ### lift(doc[, outDoc[, $]])
 
@@ -101,6 +95,8 @@ Argument | Meaning
 
 The return value is the output document - either `outDoc` or a newly created object if `outDoc` is `undefined`.
 
+## Methods
+
 The `lift` function has a couple of methods.
 
 ### lift.add(...rules)
@@ -111,11 +107,13 @@ Add additional rules to this lifter.
 lift.add({ set: () => new Date().toISOString(), dst: "$.modified"});
 ```
 
-As for `lifter` any arrays of rule will be flattened.
+Accepts the same arguments as `lifter`.
 
 ### async lift.promise(doc[, outDoc[, $]])
 
-Lift the supplied `doc` and return a promise that resolves when all of the promises in `outDoc` have resolved. Accepts the same arguments as the `lift` function itself.
+Lift the supplied `doc` and return a promise that resolves when all of the promises in `outDoc` have resolved. Accepts the same arguments as the `lift` function itself. This allows async `via` functions.
+
+Returns a Promise that is resolved when all of the promises found in the document have resolved (including any copied from the input document). Rejects of any of them rejects.
 
 ## Rules
 
@@ -135,12 +133,16 @@ Let's take a look at them in more detail.
 
 ### src
 
-Specify the JSONPath in the input document where this rule will look for values. It can be any valid JSONPath. If it matches at multiple points in the source document this rule will be executed once for each match.
+Specify the JSONPath in the input document where this rule will match. It can be any valid JSONPath. If it matches at multiple points in the source document this rule will be executed once for each match. The `src` and `set` directives control the execution of the rule. If `src` has no matches the rule will be skipped. If `src` is an array each of the paths in it will be tried in turn. The rule will execute for all matches.
+
+Here's a rule that normalises an ID that may be found in `_id`, `ident` or `_uuid`. 
 
 ```javascript
 // Normalise ID: may in in _id, ident or _uuid
 const idNorm = lifter({ src: ["$._id", "$.ident", "$._uuid"], dst: "$.ID" });
 ```
+
+If all three properties are present the rule will execute three times and `$.ID` will ultimately be set to the value of `$._uuid`.
 
 When there are multiple matches the effect depends on the settings of `dst` and `mv`. By default the last matching value will overwrite any previous values but see [mv](#mv) and [dst](#dst) for ways of gathering multiple values with a single rule.
 
@@ -157,7 +159,7 @@ lift.add(
 );
 ```
 
-To compute the value dynamically `set` should be a function. It is called with two arguments: the input document and the `$` context.
+To compute the value dynamically `set` should be a function. It is called with two arguments: the input document and the `$` context. Alternately `set` can be a literal value.
 
 ```javascript
 lift.add(
@@ -234,7 +236,7 @@ const collectLinks = lifter({
 });
 ```
 
-In the above example the output document would contain an array at `links` containing all of the links found at `$.link[*]` and `$..info.link`.
+In the above example the output document would contain an array at `$.links` containing all of the links found at `$.link[*]` and `$..info.link`.
 
 ### clone
 
@@ -253,6 +255,31 @@ const lift = lifter(
 ### leaf
 
 Set `leaf` to force the `src` JSONPath to match only leaf nodes - i.e. not nodes containing an object or an array.
+
+## Context
+
+The context variable `$` is used internally by `jsonpath-lifter` and may be augmented with your own properties. Internally it's used to hold references to the input and output documents and any [local variables](#local-variables).
+
+Property | Meaning
+---------|--------
+`doc`    | The input document
+`out`    | The output document
+`local`  | The local variable stash.
+
+
+## Local Variables
+
+Sometimes its useful to make a value from a document available to later rules - maybe rules in nested lifters. Here's an example that stashes the document ID and uses it in a nested lifter.
+
+```javascript
+const liftAddStamp = lifter({ dst: "$.stamp", src: "@.id" });
+const lift = lifter(
+  { dst: "@.id", src: "$._uuid" }, // stash id
+  liftAddStamp // use id
+);
+```
+
+Any JSONPath that starts with `@` rather than `$` refers to a local variable which persists for only a single invocation of the lifer. Nested lifters inherit local variables but any changes that they make are not propagated back to the calling lifter.
 
 ## Performance
 
