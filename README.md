@@ -65,7 +65,7 @@ Read on to discover more complex rules and the interesting ways in which they ca
 
 ## API
 
-To create a new `lift` function call `lifter` with a list of [rules](#rules). 
+To create a new transformation function call `lifter` with a list of [rules](#rules). 
 
 ```javascript
 const lift = lifter(
@@ -78,7 +78,7 @@ const lift = lifter(
 );
 ```
 
-`lifter` returns a function that will apply the rules in order on an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature. 
+`lifter` returns a function that will apply the rules in order to an input document to produce an output document. You can pass a mixture of rules (as above), other `lift` functions or any function with the same signature as a `lift` function. 
 
 Any nested arrays in the input arguments will be flattened.
 
@@ -148,7 +148,7 @@ The `src` and `set` properties control the execution of each rule and one or oth
 
 ### src
 
-Specify the JSONPath in the input document where this rule will match. It can be any valid JSONPath. If it matches at multiple locations in the source document the rule will be executed once for each match. If `src` has no matches the rule will not be executed. If `src` is an array each of the paths in it will be tried in turn and the rule will execute for all matches.
+Specify the JSONPath in the input document that this rule will match. It can be any valid JSONPath. If it matches at multiple locations in the source document the rule will be executed once for each match. If `src` has no matches the rule will not be executed. If `src` is an array each of the paths in it will be tried in turn and the rule will execute for all matches.
 
 Here's a rule that normalises an ID that may be found in `_id`, `ident` or `_uuid`. 
 
@@ -194,7 +194,7 @@ Every rule must contain either a `src` or a `set` property.
 
 ### dst
 
-Specify the path in the output document where the matched value should be stored. For `set`, `dst` is required and must be a JSONPath.
+Specify the path in the output document where the matched value should be stored. For `set`, `dst` is required and must be a JSONPath string.
 
 When used with `src`, `dst` can take the following values
 
@@ -202,12 +202,12 @@ Value             | Meaning
 ------------------|----------
 A JSONPath string | The location in the output document for this value
 A function        | Called as `dst(value, path, $)`, returns the JSONPath to use
-`false`           | Disable writing to output document. Assumes `via` has side effects that we need
+`false`           | Discard value. Assumes `via` has side effects that we need
 `undefined`       | Use the path in the input document where this value was found.
 
 When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document overwriting any previous matches. 
 
-If `dst` is a function it must return an output path based on the input path, the matched value and the context (`$`). Each match can thus be placed in a different location in the output document.
+If `dst` is a function it will be called as `dst(value, path, $)`. It must return the output JSONPath. Each match can thus be placed in a different location in the output document.
 
 If `dst` is missing altogether (`undefined`) the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
@@ -223,9 +223,9 @@ Values found in the input document may be modified before assigning them to the 
 const liftIDs = lifter({ src: "$..id", via: id => id.toLowerCase() });
 ```
 
-The `via` function is called as `via(value, path, $)` and should return the value to be assigned to the output document. 
+The `via` function is called as `via(inValue, outValue, $)` and should return the value to be assigned to the output document. 
 
-The signature of the `via` function is the same as that of a `lift` function. That means that lifters can be reused and composed easily.
+The signature of the `via` function is the same as that of a `lift` function; `outValue` and `$` are optional and `inValue` is the value in the input document that `src` matched. Lifters are `via` functions!
 
 ```javascript
 const liftMeta = lifter( { ... } );
@@ -249,7 +249,7 @@ const lift = lifter({
 
 ### mv
 
-Normally a single value is assigned to each location in the output document. However if `mv` is set to `true` the corresponding `dst` (however computed) is treated as an array onto which each matching value is pushed.
+Normally a single value is assigned to each location in the output document. However if `mv` is set to `true` the corresponding `dst` is treated as an array onto which each matching value is pushed.
 
 ```javascript
 const collectLinks = lifter({
