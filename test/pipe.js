@@ -22,7 +22,3 @@ tap.test(`Empty pipe`, async () => {
   const want = { id: "ABC" };
   tap.same(got, want, `empty pipe`);
 });
-
-tap.test(`Bad lifter in pipe`, async () => {
-  tap.throws(() => lifter.pipe({}), /pipe members/i, "non function in pipe");
-});

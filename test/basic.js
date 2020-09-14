@@ -62,6 +62,4 @@ tap.test("Negative", async () => {
   );
 
   tap.throws(() => lifter({}), /missing/i, "missing src/set");
-
-  tap.throws(() => lifter({ src: "$", via: 3 }), /function/i, "bad via");
 });
