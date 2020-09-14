@@ -308,6 +308,37 @@ const lift = lifter(
 
 Any JSONPath that starts with `@` rather than `$` refers to a local variable which persists for only a single invocation of the lifter. Nested lifters inherit local variables but any changes that they make are not propagated back to the calling lifter.
 
+## Pipelines
+
+All of the rules in a lifter read from a single input document and write to the single output document. Sometimes it's useful to build the output document in one more more stages - using intermediate, temporary documents.
+
+Pipelines are created by calling `lifter.pipe` with a list of lifters (or other functions with the same signature). Here's a pipeline with two stages.
+
+```javascript
+const liftPoint = lifter.pipe(
+  lifter(
+    // extract lat, lon, alt
+    { dst: `$.lat`, src: `$.coordinates[1]` },
+    { dst: `$.lon`, src: `$.coordinates[0]` },
+    { dst: `$.alt`, src: `$.coordinates[2]` }
+  ),
+  lifter(
+    // copy lat, Lon, alt from previous stage
+    { src: ["$.lat", "$.lon", "$.alt"] },
+    // create map link
+    {
+      dst: `$.map`,
+      src: `$`,
+      via: v => `https://www.google.co.uk/maps/place/${v.lat},${v.lon}`
+    }
+  )
+);
+```
+
+A pipeline has the same signature as a lifter. Lifters and pipelines may be freely mixed to achieve the desired data flow.
+
+The last stage in a pipeline writes to the pipeline's output documents; previous stages write to a temporary empty document which is passed to the next stage as its input document.
+
 ## Performance
 
 The `lift` function is created using [`jsonpath-faster`](https://www.npmjs.com/package/jsonpath-faster) which compiles JSONPath expressions into Javascript and caches the resulting functions. All of the `src` JSONPaths in a lifter are compiled into a single Javascript function which then dispatches to callbacks which handle the outcome of each rule. `dst` paths are compiled and cached the first time each one is seen. It's designed to be as fast and efficient as possible and is used in production as part of a processing pipeline which handles millions of complex documents per hour.
