@@ -5,15 +5,20 @@ const doc = require("./all_hour");
 
 const toISOTime = t => new Date(t).toISOString();
 
-const liftPoint = lifter(
-  { dst: `$.lat`, src: `$.coordinates[1]` },
-  { dst: `$.lon`, src: `$.coordinates[0]` },
-  { dst: `$.alt`, src: `$.coordinates[2]` },
-  {
-    dst: `$.map`,
-    src: `$.coordinates`,
-    via: v => `https://www.google.co.uk/maps/place/${v[1]},${v[0]}`
-  }
+const liftPoint = lifter.pipe(
+  lifter(
+    { dst: `$.lat`, src: `$.coordinates[1]` },
+    { dst: `$.lon`, src: `$.coordinates[0]` },
+    { dst: `$.alt`, src: `$.coordinates[2]` }
+  ),
+  lifter(
+    { src: ["$.lat", "$.lon", "$.alt"] },
+    {
+      dst: `$.map`,
+      src: `$`,
+      via: v => `https://www.google.co.uk/maps/place/${v.lat},${v.lon}`
+    }
+  )
 );
 
 const liftProps = lifter(
