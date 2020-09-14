@@ -132,7 +132,11 @@ Returns a Promise that is resolved when all of the promises found in the documen
 
 ## Rules
 
-A lifter is a set of rules that are applied one after another to an input document to produce an output document. Each rule is either a function with the signature `f(inDoc, outDoc, $)` or an object that may contain the following properties.
+A lifter is a set of rules that are applied one after another to an input document to produce an output document. Here's what the data flow looks like.
+
+![Lifter Data Flow](https://raw.githubusercontent.com/AndyA/jsonpath-lifter/master/doc/images/dataflow.svg)
+
+Each rule is either a function with the signature `f(inDoc, outDoc, $)` or an object that may contain the following properties.
 
 Property | Meaning 
 ---------|--------
