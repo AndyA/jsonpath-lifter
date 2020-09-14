@@ -30,6 +30,11 @@ tap.test("More complex lifter", async () => {
   );
 });
 
+tap.test("No input document", async () => {
+  const lift = lifter();
+  tap.same(lift(), undefined, "undef -> undef");
+});
+
 tap.test("Side effect only", async () => {
   const ids = [];
   const lift = lifter({ dst: false, src: "$.id", via: id => ids.push(id) });
