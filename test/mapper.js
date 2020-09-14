@@ -22,3 +22,7 @@ const want = [
 ];
 
 tap.same(got, want, `mapper`);
+
+const pipeLift = lifter.pipe(lift);
+const pipeGot = docs.map(pipeLift.mapper);
+tap.same(pipeGot, want, `pipe mapper`);
