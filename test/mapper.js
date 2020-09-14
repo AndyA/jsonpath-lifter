@@ -26,3 +26,5 @@ tap.same(got, want, `mapper`);
 const pipeLift = lifter.pipe(lift);
 const pipeGot = docs.map(pipeLift.mapper);
 tap.same(pipeGot, want, `pipe mapper`);
+
+tap.throws(() => docs.map(lift), /map-like/i, "detects use in map");
