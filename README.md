@@ -283,6 +283,28 @@ const lift = lifter(
 
 Set `leaf` to force the `src` JSONPath to match only leaf nodes - i.e. not nodes containing an object or an array.
 
+## Use in Array.map()
+
+It is tempting to pass a lifter to Javascript's `Array.map()` method. It won't do what you expect because the `map` called back is called as
+
+```javascript
+cb(doc, index, array)
+```
+
+but a lifter is called as
+
+```javascript
+lift(doc, outDoc, $)
+```
+
+As a bit of syntactic sugar every lift function has a `mapper` property which is a function that may be passed directly to `map`.
+
+```javascript
+lift.mapper(doc)
+```
+
+Use it anywhere you don't control the remainder of the arguments to the callback after `doc`.
+
 ## Context
 
 The context variable `$` is used internally by `jsonpath-lifter` and is passed to all callbacks. It may be augmented with your own properties. Internally it's used to hold references to the input and output documents and any [local variables](#local-variables).
