@@ -1,6 +1,6 @@
 {
   "name": "jsonpath-lifter",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "JSONPath based document transformations",
   "main": "index.js",
   "scripts": {
