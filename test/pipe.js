@@ -19,6 +19,5 @@ tap.test(`Empty pipe`, async () => {
   const lift = lifter.pipe();
   const doc = { id: "ABC" };
   const got = lift(doc);
-  const want = { id: "ABC" };
-  tap.same(got, want, `empty pipe`);
+  tap.same(got, undefined, `empty pipe`);
 });
