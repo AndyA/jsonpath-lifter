@@ -60,3 +60,21 @@ tap.test("local storage scope", async () => {
   const got = lift(doc);
   tap.same(got, want, "nested local storage");
 });
+
+tap.test("local in context", async () => {
+  const lift = lifter(
+    { dst: "@.programme_id", src: "$.uuid" },
+    {
+      dst: "$.info",
+      src: "$",
+      via: [{ dst: "$.pid", set: (doc, $) => $.local.programme_id }]
+    }
+  );
+  const doc = { uuid: "3ec257fe74334093aa569d3c93506fb7" };
+  const got = lift(doc);
+  tap.same(
+    got,
+    { info: { pid: "3ec257fe74334093aa569d3c93506fb7" } },
+    "$.local"
+  );
+});
