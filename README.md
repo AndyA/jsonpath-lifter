@@ -224,6 +224,12 @@ If `dst` is a function it will be called as `dst(value, path, $)`. The value it 
   * a different path to copy to 
   * another function which will be called to provide a new`dst`.
 
+Here's a lifter that filters out `$.key` fields:
+
+```javascript
+const lift = lifter({ src: "$..*", dst: (v, p) => p !== "$.key" });
+```
+
 ### via
 
 Values found in the input document may be modified before assigning them to the output document. Let's build on the previous example to convert all found ids to lower case.
