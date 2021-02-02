@@ -44,6 +44,13 @@ tap.test("Side effect only", async () => {
   tap.same(ids, ["ABC"], "side effect");
 });
 
+tap.test("dst as filter", async () => {
+  const lift = lifter({ src: "$..*", dst: (v, p) => p !== "$.key" });
+  const doc = { id: "ABC", key: "XYZ" };
+  const got = lift(doc);
+  tap.same(got, { id: "ABC" }, "dst as filter");
+});
+
 tap.test("NOP", async () => {
   const lift = lifter({ dst: false, src: "$.id" });
   const doc = { id: "ABC" };
