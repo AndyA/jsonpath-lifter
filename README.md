@@ -202,22 +202,27 @@ Specify the path in the output document where the matched value should be stored
 
 When used with `src`, `dst` can take the following values
 
-Value             | Meaning
-------------------|----------
-A JSONPath string | The location in the output document for this value
-A function        | Called as `dst(value, path, $)`, returns the JSONPath to use
-`false`           | Discard value. Assumes `via` has side effects that we need
-`undefined`       | Use the path in the input document where this value was found.
+Value                  | Meaning
+-----------------------|----------
+A JSONPath string      | The location in the output document for this value
+`undefined` or `true`  | Use the path in the input document where this value was found.
+`false`                | Discard value. Assumes `via` has side effects that we need
+A function             | Called as `dst(value, path, $)`, returns a new dst which is interpreted according to these rules
 
-When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document overwriting any previous matches. 
+When `dst` is a JSONPath string and `mv` is not set each matching value will be written to the same location in the output document overwriting any previous matches. If `mv` is set `dst` is a list onto which matching items are pushed.
 
-If `dst` is a function it will be called as `dst(value, path, $)`. It must return the output JSONPath. Each match can thus be placed in a different location in the output document.
-
-If `dst` is missing altogether (`undefined`) the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
+If `dst` is missing altogether (`undefined`) or `true` the concrete path where each value was found will be used unaltered. Here's an example that makes a skeleton document that contains all the `id` fields in their original locations but nothing else.
 
 ```javascript
 const liftIDs = lifter({ src: "$..id" });
 ```
+
+If `dst` is a function it will be called as `dst(value, path, $)`. The value it returns is interpreted in the same way as a literal `dst`. This means it can return
+
+  * `true` or `undefined` to copy a value
+  * `false` to discard a value
+  * a different path to copy to 
+  * another function which will be called to provide a new`dst`.
 
 ### via
 
