@@ -379,6 +379,7 @@ The `lift` function is created using [`jsonpath-faster`](https://www.npmjs.com/p
 ## CI Status
 
 ![CI Status](https://github.com/AndyA/jsonpath-lifter/actions/workflows/node.js.yml/badge.svg)
+[![CodeQL](https://github.com/AndyA/jsonpath-lifter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AndyA/jsonpath-lifter/actions/workflows/codeql-analysis.yml)
 
 ## License
 
